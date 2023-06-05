@@ -15,19 +15,15 @@ _Auth = Callable[[requests.PreparedRequest], requests.PreparedRequest]
 SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 
 
-class phylloStream(RESTStream):
+class PhylloStream(RESTStream):
     """phyllo stream class."""
 
     @property
     def url_base(self) -> str:
         """Return the API URL root, configurable via tap settings."""
-        # TODO: hardcode a value here, or retrieve it from self.config
-        return "https://api.mysample.com"
+        return self.config.get("api_url")
 
-    records_jsonpath = "$[*]"  # Or override `parse_response`.
-
-    # Set this value or override `get_new_paginator`.
-    next_page_token_jsonpath = "$.next_page"  # noqa: S105
+    records_jsonpath = "$.data[*]"  # Or override `parse_response`.
 
     @property
     def authenticator(self) -> BasicAuthenticator:
@@ -38,8 +34,8 @@ class phylloStream(RESTStream):
         """
         return BasicAuthenticator.create_for_stream(
             self,
-            username=self.config.get("username", ""),
-            password=self.config.get("password", ""),
+            username=self.config.get("client_id", ""),
+            password=self.config.get("secret", ""),
         )
 
     @property
@@ -93,25 +89,6 @@ class phylloStream(RESTStream):
             params["order_by"] = self.replication_key
         return params
 
-    def prepare_request_payload(
-        self,
-        context: dict | None,  # noqa: ARG002
-        next_page_token: Any | None,  # noqa: ARG002
-    ) -> dict | None:
-        """Prepare the data payload for the REST API request.
-
-        By default, no payload will be sent (return None).
-
-        Args:
-            context: The stream context.
-            next_page_token: The next page index or value.
-
-        Returns:
-            A dictionary with the JSON body for a POST requests.
-        """
-        # TODO: Delete this method if no payload is required. (Most REST APIs.)
-        return None
-
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
         """Parse the response and return an iterator of result records.
 
@@ -121,22 +98,4 @@ class phylloStream(RESTStream):
         Yields:
             Each record from the source.
         """
-        # TODO: Parse response body and return a set of records.
         yield from extract_jsonpath(self.records_jsonpath, input=response.json())
-
-    def post_process(
-        self,
-        row: dict,
-        context: dict | None = None,  # noqa: ARG002
-    ) -> dict | None:
-        """As needed, append or transform raw data to match expected structure.
-
-        Args:
-            row: An individual record from the stream.
-            context: The stream context.
-
-        Returns:
-            The updated record dictionary, or ``None`` to skip the record.
-        """
-        # TODO: Delete this method if not needed.
-        return row
