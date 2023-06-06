@@ -24,3 +24,13 @@ class ConnectUserStream(PhylloStream):
     primary_keys = ["id"]
     replication_key = "updated_at"
     schema = schemas.list_users
+
+
+class ConnectAccountStream(PhylloStream):
+    """Connect - List Work platforms stream."""
+
+    name = "list_accounts"
+    path = "/v1/accounts"
+    primary_keys = ["id"]
+    replication_key = "updated_at"
+    schema = schemas.list_accounts
